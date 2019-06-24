@@ -13,5 +13,11 @@ public class UserController {
 	public Principal user(Principal user) {
 		return user;
 	}
+	
+	@GetMapping("/query")
+	public String query() {
+		return "test testing";
+	}
+
 
 }

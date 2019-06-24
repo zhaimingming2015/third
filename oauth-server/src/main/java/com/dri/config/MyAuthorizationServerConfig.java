@@ -1,6 +1,7 @@
 package com.dri.config;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
@@ -11,6 +12,7 @@ import org.springframework.security.oauth2.config.annotation.web.configuration.E
 import org.springframework.security.oauth2.config.annotation.web.configurers.AuthorizationServerEndpointsConfigurer;
 import org.springframework.security.oauth2.config.annotation.web.configurers.AuthorizationServerSecurityConfigurer;
 import org.springframework.security.oauth2.provider.token.TokenStore;
+import org.springframework.security.oauth2.provider.token.store.JwtAccessTokenConverter;
 import org.springframework.security.oauth2.provider.token.store.redis.RedisTokenStore;
 
 /**
@@ -21,12 +23,17 @@ import org.springframework.security.oauth2.provider.token.store.redis.RedisToken
 @Configuration
 @EnableAuthorizationServer
 public class MyAuthorizationServerConfig extends AuthorizationServerConfigurerAdapter{
-
+	
 	@Autowired
+	@Qualifier("authenticationManagerBean")
 	private AuthenticationManager authenticationManager;  // 认证管理器
 	
 	@Autowired
 	private RedisConnectionFactory redisConnectionFactory; // redis连接工厂
+	
+	
+	@Autowired(required = false)
+	private JwtAccessTokenConverter jwtAccessTokenConverter;
 	
 	 /**
      * 令牌存储
@@ -34,18 +41,20 @@ public class MyAuthorizationServerConfig extends AuthorizationServerConfigurerAd
      */
 	@Bean
 	public TokenStore tokenStore() {
+		System.out.println("MyAuthorizationServerConfig tokenStore()");
 		return new RedisTokenStore(redisConnectionFactory);
 	}
 
 	@Override
 	public void configure(AuthorizationServerSecurityConfigurer security) throws Exception {
-		
+		System.out.println("MyAuthorizationServerConfig configure(AuthorizationServerSecurityConfigurer security)");
 		security.tokenKeyAccess("permitAll()")
 		        .checkTokenAccess("isAuthenticated()");
 	}
 
 	@Override
 	public void configure(ClientDetailsServiceConfigurer clients) throws Exception {
+		System.out.println("MyAuthorizationServerConfig configure(ClientDetailsServiceConfigurer clients)");
 		
 		clients.inMemory()
 		       .withClient("android")
@@ -62,9 +71,14 @@ public class MyAuthorizationServerConfig extends AuthorizationServerConfigurerAd
 
 	@Override
 	public void configure(AuthorizationServerEndpointsConfigurer endpoints) throws Exception {
+		System.out.println("MyAuthorizationServerConfig configure(AuthorizationServerEndpointsConfigurer endpoints");
 		
 		endpoints.authenticationManager(this.authenticationManager);
 		endpoints.tokenStore(tokenStore());
+		
+		if(jwtAccessTokenConverter!=null) {
+			endpoints.accessTokenConverter(jwtAccessTokenConverter);
+		}
 		
 	}
 	
